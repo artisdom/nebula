@@ -1,24 +1,22 @@
-mod handler;
+pub mod handler;
 
-use std::{io::Error, net::TcpListener};
+use std::{io::{Error, Read}, net::TcpListener};
 
-pub struct Server {
-    container_path: String,
+use handler::Handler;
+
+pub struct Engine<T: Handler> {
+    tcp_payload_handler: T,
     started: bool,
     port: u16,
 }
 
-impl Server {
-    pub fn new(container_path: String, port: u16) -> Result<Self, String> {
-        if !std::path::Path::new(&container_path).exists() {
-          return Err(format!("Path '{}' does not exist", container_path));
-        }
-
-        Ok(Self {
-            container_path,
+impl<T> Engine<T> where T: Handler {
+    pub fn new(tcp_payload_handler: T, port: u16) -> Engine<T>{
+        Self {
+            tcp_payload_handler,
             started: false,
             port: if port <= 0 { 8080 } else { port },
-        })
+        }
     }
 
     pub fn start(&mut self) -> Result<(), Error> {
@@ -30,10 +28,10 @@ impl Server {
 
         for stream in listener.incoming() {
             match stream {
-                Ok(s) => {
-                  let mut mut_stream = s.try_clone().expect("Clone has failed");
-                  drop(s);
-                  self.handle_stream(&mut mut_stream);
+                Ok(mut s) => {
+                    let mut buf: [u8; 1024] = [0; 1024];
+                    _ = s.read(&mut buf);
+                    self.tcp_payload_handler.handle_payload(&mut buf);
                 }
                 Err(e) => {
                     eprintln!("Connection failed: {}", e);
