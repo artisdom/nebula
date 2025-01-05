@@ -1,17 +1,17 @@
 pub mod handler;
 
-use std::{io::{Error, Read}, net::TcpListener};
+use std::{io::Error, net::TcpListener};
 
 use handler::Handler;
 
-pub struct Engine<T: Handler> {
-    tcp_payload_handler: T,
+pub struct Engine<'a, T: Handler> {
+    tcp_payload_handler: &'a T,
     started: bool,
     port: u16,
 }
 
-impl<T> Engine<T> where T: Handler {
-    pub fn new(tcp_payload_handler: T, port: u16) -> Engine<T>{
+impl<'a, T> Engine<'a, T> where T: Handler {
+    pub fn new(tcp_payload_handler: &'a T, port: u16) -> Engine<'a, T> {
         Self {
             tcp_payload_handler,
             started: false,
@@ -27,15 +27,8 @@ impl<T> Engine<T> where T: Handler {
         println!("Server started on {}", address);
 
         for stream in listener.incoming() {
-            match stream {
-                Ok(mut s) => {
-                    let mut buf: [u8; 1024] = [0; 1024];
-                    _ = s.read(&mut buf);
-                    self.tcp_payload_handler.handle_payload(&mut buf);
-                }
-                Err(e) => {
-                    eprintln!("Connection failed: {}", e);
-                }
+            if let Ok(mut payload) = stream {
+                self.tcp_payload_handler.handle_payload(&mut payload);
             }
         }
 
