@@ -1,7 +1,7 @@
 mod utils;
 
 use std::{io::Write, path::Path};
-use crate::thread_pool::ProtocolHandler;
+use crate::mult_thread::ProtocolHandler;
 
 pub struct HttpProtocolHandler {
     default_container: String
