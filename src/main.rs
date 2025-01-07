@@ -1,5 +1,7 @@
-use nebula::{engine::Engine, thread_pool::ThreadHandler};
+use nebula::{engine::Engine, http_protocol_handler::HttpProtocolHandler, thread_pool::ThreadHandler};
 
 fn main() {
-    Engine::new(&ThreadHandler::new(), 8080).start().unwrap();
+    let args = std::env::args().collect::<Vec<String>>();
+    let path = args.get(1).expect("No container to server specified. Use cargo run /path/to/container");
+    Engine::new(ThreadHandler::new(HttpProtocolHandler::new(path.clone())), 8080).start().unwrap();
 }
