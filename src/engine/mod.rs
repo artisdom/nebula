@@ -4,14 +4,14 @@ use std::{io::Error, net::TcpListener};
 
 use handler::Handler;
 
-pub struct Engine<'a, T: Handler> {
-    tcp_payload_handler: &'a T,
+pub struct Engine<T: Handler> {
+    tcp_payload_handler: T,
     started: bool,
     port: u16,
 }
 
-impl<'a, T> Engine<'a, T> where T: Handler {
-    pub fn new(tcp_payload_handler: &'a T, port: u16) -> Engine<'a, T> {
+impl<T> Engine<T> where T: Handler {
+    pub fn new(tcp_payload_handler: T, port: u16) -> Engine<T> {
         Self {
             tcp_payload_handler,
             started: false,
@@ -27,8 +27,8 @@ impl<'a, T> Engine<'a, T> where T: Handler {
         println!("Server started on {}", address);
 
         for stream in listener.incoming() {
-            if let Ok(mut payload) = stream {
-                self.tcp_payload_handler.handle_payload(&mut payload);
+            if let Ok(payload) = stream {
+                self.tcp_payload_handler.handle_payload(payload);
             }
         }
 
